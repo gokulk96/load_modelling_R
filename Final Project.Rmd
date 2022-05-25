@@ -1,0 +1,2213 @@
+---
+title: "Data Analysis and Modeling for Household Energy Use and Tariff Comparison"
+subtitle: "Gokul Krishnan (gokulkri), Rahul Jha (rahuljha), Chris Fang (lihshyaf), Manish Sainani (msainani), Sagar Bharadwaj (sagarjab)"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Introduction 
+In this section, we will be discussing the data that we collected and how we plan to utilize it over the entire project. Our project revolves around a household in France (city’s name), where we have obtained their energy consumption data over the years. To be precise, we have the energy consumption data by the minute for this particular household. In addition to this, we have also obtained the power consumption data that we will be utilized in this project. The data we obtained for the household is divided into three parts, submetering 1, submetering 2 and submetering 3. Submetering 1 data (in watt-hour of active energy) corresponds to the kitchen, consisting of a dishwasher, an oven, and a microwave. Submetering 2 data (in watt-hour of active energy) corresponds to the laundry room, including a washing machine, a tumble-drier, a refrigerator and a light. Submetering 3 data (in watt-hour of active energy) corresponds to an electric water heater and an air-conditioner. 
+Our project aims to utilize this data and help them conserve their energy better by using data science.  We will be implementing the time of use pricing to observe how their electricity bill and energy consumption vary and if this would help them. Furthermore, we will follow their consumption pattern and predict their future consumption, which would allow us to suggest ways to conserve energy for each submetering type. This process would include identifying the device that is consuming the most energy at a particular time and if we could take measures to reduce the consumption of this device or replace this with another more energy-efficient appliance. We would also suggest the best time to use this device to conserve energy efficiently. 
+
+## Background 
+In this section, we will discuss the data collected for this process. As mentioned in the previous section, the data for the household's energy consumption is vital for this project. This energy consumption data includes historical per minute data of their energy usage. We will utilize the time of use pricing data for France, and in addition to that, the weather data will also be utilized. The weather data for 2007-2009 will be used as the input to forecast future use. In this model, we will only be utilizing the weather data for the months of July and December for the following years. We will be predicting the same for the year 2010 and then comparing the same with already existing data to validate our results. 
+
+## Motivation 
+In this world of ever-depleting resources, we, as students of energy science, technology, and policy, wanted to find ways to conserve energy. As a result, we wanted to utilize the skills we obtained from our Data Science for technology innovation and policy class and apply that to find ways to conserve energy better. Delving into the benefits of time of use pricing, with the help of R, we can find out if this helps provide energy savings. With this, we will be able to analyze historical data, predict future data, and suggest conservation methods.
+
+# Talking about Data
+The project uses 2 datasets: Individual household electric power consumption dataset  and Weather data. The household whose energy consumption is observed here is in Sceaux (7km from Paris in France). 
+The first dataset contains 2075259 per-minute measurements from December 2006 to November 2010 (47 months). The dataset was gathered by Georges Hebrail, who is a Senior Researcher at EDF R&D in Clamart, France and Alice Berard, who was a Graduate student intern there.
+
+## Dataset information:
+The dataset contains some missing values in the measurements (nearly 1.25% of the rows). All calendar timestamps are present in the dataset but for some timestamps, the measurement values are missing. For instance, the dataset shows missing values on April 28, 2007.
+
+## Column headers
+1.Date:Date in format dd/mm/yyyy
+
+2.Time: Time in format hh:mm:ss
+
+3.Global_active_power: Household global minute-averaged active power (in kilowatt)
+
+4.Global_reactive_power: Household global minute-averaged reactive power (in kilowatt)
+
+5.Voltage: Minute-averaged voltage (in volt)
+
+6.Global_intensity: Household global minute-averaged current intensity (in ampere)
+
+7.Sub_metering_1: (Watt-hour of active energy) It corresponds to energy consumed the kitchen, containing mainly a dishwasher, an oven and a microwave.				 
+
+8.Sub_metering_2: (Watt-hour of active energy) It corresponds to the laundry room, containing a washing-machine, a tumble-drier, a refrigerator and a light.
+
+9.Sub_metering_3: (Watt-hour of active energy) It corresponds to an electric water-heater and an air-conditioner.
+The second dataset is Weather data for Paray-Vieille-Poste, Essonne, France by Wunderground.  The weather station is 13 km away from Sceaux. It contains half-hourly historical weather data. We are interested in data from 2007 to 2010.
+
+## Dataset information
+
+Some calendar timestamps are missing in the dataset. For example, the data for July 2nd 1:30 am and 2 a.m. is missing.
+
+Column Headers:
+
+1.	Time: Time in format hh:mm:ss
+
+2.	Temperature: Instantaneous temperature in degree-Fahrenheit
+
+3.	Dew point: Temperature of air at which condensation begins (in degree-Fahrenheit)
+
+4.	Humidity: Air humidity in percentage
+
+5.	Wind:	 Direction of wind flow
+
+6.	Wind Speed: Instantaneous wind speed in miles per hour
+
+7.	Wind Gust: A brief increase in wind speed, usually less than 20 seconds (in miles per hour)
+
+8.	Pressure: Atmospheric pressure in mm of Hg
+
+9.	Precipitation: Measure of precipitation in mm	
+
+10.	Condition: Weather condition (Fair, Cloudy, Partly cloudy, etc.)
+
+## Data Cleaning and Transformation
+
+The ‘Individual household electric power consumption dataset’ had per-minute Global active power and global reactive power data and energy consumption categorized into sub-metering 1, sub-metering 2 and sub-metering 3. The energy consumption data needed to be combined with ‘Weather data’ for the years 2007 to 2010. The project uses weather data and historical energy consumption to predict energy consumption for 2010. The weather data was available on a half-hourly basis. The per-minute data for power and energy consumption needed to be converted to half-hourly data for combining the two datasets. This was done by keeping consumption data at 30-minute intervals and filtering out the rest of the data.
+The dates were split into day, week number, month, and year. The day of week was also added to split the data points into weekdays and weekends. The time was split into hour, minute, and seconds. This bifurcation was used to observe hourly usage patterns. An additional column called ‘Pay’ was also added. It contains ‘Time-of-use’ pricing rates that are currently in use in France. Time-of-use pricing has different electricity rates for summer peak, summer off-peak, winter peak and winter off-peak hours.
+
+Time-of-use rates:
+December - March
+1 am - 7 am - £ 0.1390/kWh
+
+7 am - 1 pm - £ 0.1890/kWh
+
+1 pm - 5 pm - £ 0.1390/kWh
+
+5 pm - 1 am - £ 0.1890/kWh
+
+April - November 
+1 am - 7 am - £ 0.1160/kWh 
+
+7 am - 1 pm - £ 0.1450/kWh 
+
+1 pm - 5 pm - £ 0.1160/kWh 
+
+5 pm - 1 am - £ 0.1450/kWh 
+
+Some data points in the Individual household electric power consumption dataset had ‘?’ as entries. These were replaced by N/A first and then by mean value for that column in the dataset. In the weather dataset, the columns with discrete and non-numeric values were converted into binary variables. The weather condition data had these entries: Cloudy, Partly cloudy, Mostly cloudy, Fair and Windy (Wdy). Cloudy, partly cloudy, and mostly cloudy were represented by 1 and the others by 0. The numeric data entries had units written beside the numeric values. To use those data entries as numeric data type, the units were removed. Wind direction is not considered during data analysis as it did not have any relation with the energy consumption values. There were missing data points in the weather dataset. It did not have data for certain time intervals for certain days of the year. The values for those times were added by using the data in the next or previous entry. This could be done because the weather in Sceaux (France) doesn’t change significantly over 1-2 hours.
+
+## Importing Libraries
+
+```{r libraries}
+library(tidyverse)
+library("readxl")
+library(data.table)
+library(lubridate)
+library(plyr)
+library(cluster)
+library(timeDate)
+library(reshape2)
+library(modelr)
+library(glmnet)
+library(randomForest)
+library(caret)
+```
+
+## Importing Data
+
+```{r importing library}
+dt <- fread("household_power_consumption.txt", na.strings = "?")
+```
+
+## Processing to Seperate Time and Date data
+```{r converting date format}
+dt$datetime <- paste(dt$Date,dt$Time)
+dt$datetime <-as.POSIXct(dt$datetime, format="%d/%m/%Y %H:%M:%S")
+dt$year <- year(dt$datetime)
+dt$week <- week(dt$datetime)
+dt$day <- day(dt$datetime)
+dt$month <- month(dt$datetime)
+dt$minute <- minute(dt$datetime)
+dt$hour <- hour(dt$datetime)
+dt$dayofweek <-strftime(dt$Date, "%A")
+```
+
+## Appending Time of Use rates
+
+```{r appending use rate }
+
+dt$rate1 <- ifelse((dt$month > 11 | dt$month < 4), 
+                  (ifelse((dt$hour > 0 & dt$hour < 7), dt$rate1 <- 0.1390, 
+                  (ifelse((dt$hour > 6 & dt$hour < 13), dt$rate1 <- 0.1890, 
+                  (ifelse((dt$hour > 12 & dt$hour < 9), dt$rate1 <- 0.1390, 
+                          dt$rate <- 0.1890)))))), 
+                  (ifelse((dt$hour > 0 & dt$hour < 7), dt$rate1 <- 0.1160, 
+                  (ifelse((dt$hour > 6 & dt$hour < 13), dt$rate1 <- 0.1450, 
+                  (ifelse((dt$hour > 12 & dt$hour < 9),dt$rate1 <- 0.1160,
+                  dt$rate1 <- 0.1450)))))))
+
+dt$rate2 <- 0.17
+
+dt$bill1 <- dt$rate1*dt$Global_active_power/60
+dt$bill2 <- dt$rate2*dt$Global_active_power/60
+```
+## Tidying data
+
+```{r }
+dt$Sub_metering_1[is.na(dt$Sub_metering_1)]<-mean(dt$Sub_metering_1,na.rm=TRUE)
+dt$Sub_metering_2[is.na(dt$Sub_metering_2)]<-mean(dt$Sub_metering_2,na.rm=TRUE)
+dt$Sub_metering_3[is.na(dt$Sub_metering_3)]<-mean(dt$Sub_metering_3,na.rm=TRUE)
+
+
+dt$Voltage[is.na(dt$Voltage)]<-mean(dt$Voltage,na.rm=TRUE)
+dt$Global_active_power[is.na(dt$Global_active_power)]<-
+  mean(dt$Global_active_power,na.rm=TRUE)
+dt$Global_reactive_power[is.na(dt$Global_reactive_power)]<-
+  mean(dt$Global_reactive_power,na.rm=TRUE)
+dt$Global_intensity[is.na(dt$Global_intensity)]<-
+  mean(dt$Global_intensity,na.rm=TRUE)
+dt$pay <- dt$Global_active_power*dt$rate*0.001
+```
+
+The monthly average values from 2007 to 2010 are plotted using a for loop to iterate through the years. It can be observed that the remains the lowest during July or August and has the highest values during January and December for all the years. In terms of seasons, we can conclude that the Global intensity values are highest during Winter and least during summer.
+
+# Exploratory Data Analysis
+
+## Yearly and Seasonal pattern for Global Intensity
+
+```{r }
+y <- c(2007:2010)
+for (x in y){
+  print(x)
+dt1_2010 <- dt %>% filter(year == x)
+dt2_2010 <- dt1_2010 %>% group_by(month) %>% 
+  summarise_at(vars(Global_intensity), list(GI.avg = mean))
+print(ggplot(dt2_2010, aes(month, GI.avg)) +
+          geom_point(na.rm=TRUE) + labs(title = x) + geom_smooth())
+mean(dt2_2010$GI.avg)
+}
+```
+## Yearly and Seasonal pattern for Sub Metering 1
+Here we plotted the average monthly values of Submetering 1 for years 2007 to 2010. The change in values corresponding to the seasons is not much pronounced in this case. But the value remains lowest around July or August and highest during May or June except for 2009 which has a pattern similar to global intensity. Also this value tend to stay below 1.75A.
+```{r }
+y <- c(2007:2010)
+for (x in y){
+  print(x)
+dt1_2010 <- dt %>% filter(year == x)
+dt2_2010 <- dt1_2010 %>% group_by(month) %>% 
+  summarise_at(vars(Sub_metering_1), list(Sub_metering_1.avg = mean))
+print(ggplot(dt2_2010, aes(month, Sub_metering_1.avg)) +
+          geom_point(na.rm=TRUE) + labs(title = x) + geom_smooth())
+mean(dt2_2010$Sub_metering_1.avg)
+}
+```
+Next we plot the submetering 2 values which tend to have values less than 2.5A and over the years we can see a reduction in the values. The values drop around June, July and August and have highest values during February or March except for 2009 which follows patterns similar to global intensity and has its peak during January.
+
+## Yearly and Seasonal pattern for Sub Metering 2
+
+```{r }
+y <- c(2007:2010)
+for (x in y){
+  print(x)
+dt1_2010 <- dt %>% filter(year == x)
+dt2_2010 <- dt1_2010 %>% group_by(month) %>% 
+  summarise_at(vars(Sub_metering_2), list(Sub_metering_2.avg = mean))
+print(ggplot(dt2_2010, aes(month, Sub_metering_2.avg)) +
+          geom_point(na.rm=TRUE)  + labs(title = x) + geom_smooth())
+mean(dt2_2010$Sub_metering_2.avg)
+}
+```
+
+## Yearly and Seasonal pattern for Sub Metering 3
+Next we plot the submetering 3 values which tend to have values less than 10A. The values have least values during July and August and have highest values during January and December which follows patterns similar to global intensity. Also we can observe that it has the largest share of the global intensity.
+
+```{r }
+y <- c(2007:2010)
+for (x in y){
+  print(x)
+dt1_2010 <- dt %>% filter(year == x)
+dt2_2010 <- dt1_2010 %>% group_by(month) %>% 
+  summarise_at(vars(Sub_metering_3), list(Sub_metering_3.avg = mean))
+print(ggplot(dt2_2010, aes(month, Sub_metering_3.avg)) +
+          geom_point(na.rm=TRUE) + labs(title = x) + geom_smooth())
+mean(dt2_2010$Sub_metering_3.avg)
+}
+```
+
+## Seasonal patterns for weekend and weekdays:
+In this section of the EDA, we will be focusing on the seasonal data and check how the data would change with the change in seasons. From literature we have that there are primarily 4 seasons in France, Winter (lasts between January and February), Spring (lasts between March and May), Summer (lasts between June and August), Autumn (lasts between September and December). 
+There are going to be three parts to this, Global active power, Submetering 1, Submetering 2 and Submetering 3. 
+
+### Global active power
+Firstly, we will be checking the EDA for the Global active power for the years from 2007 to 2010. 
+Below we can see the results where the X- axis represents the seasonal changes in weekdays and weekends. Odd numbers on the X-axis represents weekdays and even numbers represent weekends. 
+```{r, warning=FALSE}
+#Seasonal weeks
+#Spring: March to May
+#Summer: June to Aug
+#Autumn: September-December
+#Winter: Jan and Feb
+
+#2007
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2007 <- dt %>% filter(year == 2007)
+for (i in 1:2)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) 
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) 
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#Spring
+for (i in 3:5)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2007")
+plot(seasons, type="l", col="red" )
+
+#2008
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2008 <- dt %>% filter(year == 2008)
+for (i in 1:2)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2008")
+plot(seasons, type="l", col="red" )
+
+#2009
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2009 <- dt %>% filter(year == 2009)
+for (i in 1:2)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2009")
+plot(seasons, type="l", col="red" )
+
+#2010
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2010 <- dt %>% filter(year == 2010)
+for (i in 1:2)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:11)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Global_active_power)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Global_active_power)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2010")
+plot(seasons, type="l", col="red" )
+```
+From winter to autumn, we can see that the weekdays of the month have lesser power consumption when compared to weekends. This is an expected trend as the residents in a household spend more time at home on weekends than weekdays. We can see the trends that winter has the highest power consumption which is again justified due to the high loads of heaters they would use during the winters. This is followed by summer which is again justified as they would use their air conditioner but not as much as their heater. This is followed by the other months. 
+
+### Sub-metering 1
+The second part of this EDA for seasons of weekdays and weekends is submetering 1, this corresponds to the kitchen, consisting of a dishwasher, an oven, and a microwave. 
+Below we can see a similar trend where the month of winter has the highest power consumption then followed by summer and other years. 
+
+A similar anomaly as the global power is seen for the year of 2009 as shown below where we can see that winter does not have the highest power consumption. This anomaly could be attributed to the fact that they have been on a vacation for winter and summer or the fact that there were guests who came over to this household during spring for the year 2009 and hence the weekend for the spring has the highest power consumption. It makes more sense that the guests came over due to the increase in the submetering 1 power consumption as this attributes to the kitchen where the increase of this power consumption could have been for the increase in the food or the number of dishes washed during the month of spring.
+
+```{r, warning=FALSE}
+#Seasonal weeks
+#Spring: March to May
+#Summer: June to Aug
+#Autumn: September-December
+#Winter: Jan and Feb
+
+#2007
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2007 <- dt %>% filter(year == 2007)
+for (i in 1:2)
+{weekdayi <- dt2007 %>% filter(month == i, 
+          dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) 
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) 
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2007")
+plot(seasons, type="l", col="red" )
+
+#2008
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2008 <- dt %>% filter(year == 2008)
+for (i in 1:2)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2008")
+plot(seasons, type="l", col="red" )
+
+#2009
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2009 <- dt %>% filter(year == 2009)
+for (i in 1:2)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2009")
+plot(seasons, type="l", col="red" )
+
+#2010
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2010 <- dt %>% filter(year == 2010)
+for (i in 1:2)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:11)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_1)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_1)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2010")
+plot(seasons, type="l", col="red" )
+```
+### Sub-metering 2
+
+The third part of this EDA for seasons of weekdays and weekends is submetering 2, this corresponds to the laundry room, including a washing machine, a tumble-drier, a refrigerator and a light. Below we can see the trend for 2007 for submetering 3, this is very arbitrary trend, this anomaly could be attributed to the fact that either there was a discrepancy in the data or that since this power consumption is consisting of washing machine and drier, this could be attributed to the fact that they used these machines very arbitrarily. 
+
+For the year 2009 we can see a similar trend as the previous sections of this EDA with a maximum usage in spring and then followed by other months, this shows us that for the year 2007 there might have been some discrepancy in the data. 
+
+```{r, warning=FALSE}
+#Seasonal weeks
+#Spring: March to May
+#Summer: June to Aug
+#Autumn: September-December
+#Winter: Jan and Feb
+
+#2007
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2007 <- dt %>% filter(year == 2007)
+for (i in 1:2)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) 
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) 
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2007")
+plot(seasons, type="l", col="red" )
+
+#2008
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2008 <- dt %>% filter(year == 2008)
+for (i in 1:2)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2008")
+plot(seasons, type="l", col="red" )
+
+#2009
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2009 <- dt %>% filter(year == 2009)
+for (i in 1:2)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2009")
+plot(seasons, type="l", col="red" )
+
+#2010
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2010 <- dt %>% filter(year == 2010)
+for (i in 1:2)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:11)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_2)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_2)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2010")
+plot(seasons, type="l", col="red" )
+```
+### Sub-metering 3
+The fourth part of this EDA for seasons of weekdays and weekends is submetering 3, this corresponds to the Air conditioner and a water heater. Below is a figure for the year of 2007 and this shows us that the summer and spring have the highest usage for this which makes absolute sense as you would be utilizing the air-conditioned mostly in the summer and spring seasons. Rest of the years follow a similar trend. 
+
+```{r, warning=FALSE}
+#Seasonal weeks
+#Spring: March to May
+#Summer: June to Aug
+#Autumn: September-December
+#Winter: Jan and Feb
+
+#2007
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2007 <- dt %>% filter(year == 2007)
+for (i in 1:2)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) 
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) 
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2007 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2007 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2007")
+plot(seasons, type="l", col="red" )
+
+#2008
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2008 <- dt %>% filter(year == 2008)
+for (i in 1:2)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2008 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2008 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2008")
+plot(seasons, type="l", col="red" )
+
+#2009
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2009 <- dt %>% filter(year == 2009)
+for (i in 1:2)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2009 %>% filter(month == i,
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:12)
+{weekdayi <- dt2009 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2009 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2009")
+plot(seasons, type="l", col="red" )
+
+#2010
+weekdayset <- c()
+weekendset <- c()
+x<- c()
+months <- c()
+seasons <- c()
+dt2010 <- dt %>% filter(year == 2010)
+for (i in 1:2)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+winter <- c(mean(weekdayset), mean(weekendset))
+#spring
+for (i in 3:5)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Spring <- c(mean(weekdayset), mean(weekendset))
+
+#summer
+for (i in 6:8)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+summer <- c(mean(weekdayset), mean(weekendset))
+
+
+for (i in 9:11)
+{weekdayi <- dt2010 %>% filter(month == i, 
+              dayofweek==c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+(weekday <- mean(weekdayi$Sub_metering_3)) #ith week weekday avg
+weekendi <- dt2010 %>% filter(week==i,dayofweek==c( "Saturday", "Sunday"))
+(weekend <- mean(weekendi$Sub_metering_3)) #ith week weekend avg
+
+weekdayset <- c(weekdayset,weekday)
+weekendset <- c(weekendset,weekend)
+
+}
+Autumn <- c(mean(weekdayset), mean(weekendset))
+seasons<-c(winter,Spring,summer,Autumn)
+
+print("Year 2010")
+plot(seasons, type="l", col="red" )
+```
+
+## Daily pattern for Global Active Power
+
+In this section, we will be focusing on analyzing the daily data and looking for trends and patterns of the energy consumption for the household. 
+Our sampling technique is to use R's random sample function to pick out 1000 days randomly from the four years of data set. To avoid bias of any month, we plot a histogram of our data to show the distribution of the days that were chosen.  
+After sampling the days to analyze, we then separate the days into weekday and weekends. In our experience, the consumption pattern of electricity is different than on weekdays compared to weekends because most people stay at home all day during weekends.
+
+```{r, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 3}
+
+```
+
+```{r, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 3}
+# Looking for correlations between the numerical features.
+set.seed(5)
+random_days <- sample(x=dt$Date, size=1000)                    
+#randomly picking the 100 days out of all the days
+
+weekend <- isWeekend(random_days)
+#random_days[weekend]
+weekday <- isWeekday(random_days)
+#random_days[weekday]
+
+all_day_sampled_data <- dt[dt$Date %in% random_days, ]
+weekend_data <- dt[dt$Date %in% random_days[weekend], ]
+weekday_data <-  dt[dt$Date %in% random_days[weekday], ]
+
+all_day_sampled_data$month_cat<- months(as.Date(all_day_sampled_data$datetime))
+
+ggplot(all_day_sampled_data, aes(x=month_cat)) + geom_bar() 
+
+weekend <- isWeekend(random_days)
+#random_days[weekend]
+weekday <- isWeekday(random_days)
+#random_days[weekday]
+
+weekend_data <- dt[dt$Date %in% random_days[weekend], ]
+weekday_data <-  dt[dt$Date %in% random_days[weekday], ]
+
+```
+
+From the two plots above, one of the biggest differences we see are the total use of global active power, the household consumes more electricity in the weekends because most people are home. In addition, the weekday has a smooth plot while the weekends have an oscillating plot, this might be because when people are at home, appliances can be switched on and off more frequently, and this results in a more oscillated measurement.
+
+Further, we explored daily data over the weekdays & weekends over 30-minute intervals. For weekdays, observed that data Global Active Power (GAP) was low between midnight to 7 am. From 7 am, it gradually decreases up to 4 pm, rises again, and achieves the max peak at 9 pm. Over the weekend, the GAP remained low from midnight to 6.30 am and it was pretty much stable with in-between peaks from 7 am to 10 pm.
+To look more closely into the energy consumption, we then split the day into four sections, morning afternoon, night, and midnight to analyze the pattern. We shorten our time frame to plot data in a five-minute interval to look closer at the energy consumption.
+
+Midnight
+In this section of the day, people go to bed and the energy consumption decreases gradually into the night. 
+
+Morning
+We can see that during the morning time, the energy consumption starts to increase at 6:30 in the morning, this might indicate that household members wake up at this time. To analyze what they are doing, we will have to investigate the sub-metering data. 
+
+Afternoon 
+In the afternoon, the energy consumption starts to lower gradually, this might indicate that the members are not home, and the appliances are slowly shutting down one by one. This is an assumption since the sub metering do not include all appliances. 
+
+Night
+During nighttime, the energy consumption rises and reaches the peak at 9pm. This is a typical nighttime consumption of a residential household. This trend happens because family members come home from their jobs and start preparing dinner and watch TV, etc.
+
+```{r, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 3}
+
+daily_data <-list(weekday_data,weekend_data)
+title <- c("Weekday Global Active Power","Weekend Global Active Power")
+count = 1
+for (time in daily_data){
+
+  print(time)
+  time_data<-time %>%
+    mutate(date = as.Date(datetime), 
+           day_group = format(datetime, '%H %M'))
+  
+  time_data_mean <- aggregate(time_data$Global_active_power,
+                              by=list(time_data$day_group), mean)
+  
+  time_data_mean <- time_data_mean %>% filter(row_number() %% 30 == 0 | 
+                                                row_number() == 0)   
+  # change the plotted #time interval by changing the numbers
+
+  
+   print(ggplot(data = time_data_mean, aes(x = Group.1 , y = x)) +
+    geom_point() +
+
+      labs(y = "Global_active_power", x = "Time of Day", title = title[count]) +
+       
+      scale_x_discrete(guide = guide_axis(n.dodge=3)))
+   count <- count+1
+}
+
+midnight <- subset(weekday_data, hour %in% c("0","1","2","3","4","5"))
+morning <- subset(weekday_data, hour %in% c("6","7","8","9","10","11"))
+afternoon <- subset(weekday_data, hour %in% c("12","13","14","15","16","17"))
+night <- subset(weekday_data, hour %in% c("18","19","20","21","22","23"))
+
+title <- c("Midnight Active Power","Morning Global Active Power",
+           "Afternoon Global Active Power","Night Global Active Power")
+count = 1
+
+day_split <-list(midnight,morning,afternoon,night)
+for (time in day_split){
+  print(time)
+  time_data<-time %>%
+    mutate(date = as.Date(datetime), 
+           day_group = format(datetime, '%H %M'))
+  
+  time_data_mean <- aggregate(time_data$Sub_metering_1,
+                              by=list(time_data$day_group), mean)
+  
+  time_data_mean <- time_data_mean %>% filter(row_number() %% 5 == 0 | 
+                                                row_number() == 0)   
+  # change the plotted #time interval by changing the numbers
+
+  
+   print(ggplot(data = time_data_mean, aes(x = Group.1 , y = x)) +
+    geom_point() +
+      labs(y = "Sub_metering_1", x = "Time of Day", title = title[count]) +
+    
+      scale_x_discrete(guide = guide_axis(n.dodge=3))) +
+    geom_label(aes(label = x), nudge_y = 0.7, 
+               data = . %>% 
+                 filter(row_number() %% 5 == 0 | row_number() == 0))  
+   # change the time #interval by changing the # numbers
+   count <- count+1
+}
+
+```
+
+## Trends in Sub-metering data
+
+### Sub Metering 1
+
+According to the documentation of the dataset, sub-metering 1 accounts for kitchen appliances mainly ovens, microwaves, and dishwaters. The project analyzes per-minute data to look for reoccurring patterns and assign the most likely appliance to every pattern. 
+Three types of load pattern are found:
+The first graph pattern is probably a Microwave based on usage pattern of On/Off or High/Low with interval of 1-2min.
+The second graph pattern is probably an Oven (with usage around 20min-30min, constant load above 30kWh. Oven is usually used 2-3 times a day. 
+The third graph pattern is probably a Dish Washer (usage pattern around 60min or more)- fluctuating load of around 40 to 60 kWh). Mostly used around midnight. 
+
+```{r, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 3}
+y <- c(11)
+b <- c(7,10,11)
+for (x in y){
+  for (a in b){
+dt1_2007 <- dt %>% filter(year == 2008, month == x, day == 9, hour == a)
+print(ggplot(dt1_2007, aes(x = minute,y = Sub_metering_1)) +
+  geom_line() + labs(title = month.name[x] , subtitle = a))
+}}
+#11,7  #11,11
+```
+
+### Sub Metering 2
+
+Sub-metering 2 shows the watt-hour of active energy consumption corresponding to the laundry room containing a washing machine, dryer, refrigerator, and a light. We observed sub-metering 2 data for a few days in a month in every season. January represents winter, April represents spring, July represents summer and October represents fall. The graphs shown below have data categorized into first and second halves. First half represents 9am-3pm and second half represents 3pm-9pm. The energy usage is under 1Wh when the compressor of the refrigerator is not ON. When the compressor of the refrigerator turns ON for a few minutes, it uses up to 2Wh of energy.
+
+```{r, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 3}
+library(reshape2)
+
+#Plotting sub-metering 2 data for 5th, 10th and 25th of January, April, 
+#July and October
+for (i in c(1,4,7,10)){
+  for (j in c(5,10,25)){
+    dtdate <- dt2007 %>% filter(month == i, day == j, hour>9 & hour<15)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    #"First half: Year 2007", y = "Sub_metering_2", x = "Time of Day"))
+    dtdate <- dt2007 %>% filter(month == i, day == j, hour>15 & hour<22)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    #"Second half: Year 2007", y = "Sub_metering_2", x = "Time of Day"))
+  }
+}
+
+for (i in c(1,4,7,10)){
+  for (j in c(5,10,25)){
+    dtdate <- dt2008 %>% filter(month == i, day == j, hour>9 & hour<15)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    #"First half: Year 2008", y = "Sub_metering_2", x = "Time of Day"))
+    dtdate <- dt2008 %>% filter(month == i, day == j, hour>15 & hour<22)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    #"Second half: Year 2008", y = "Sub_metering_2", x = "Time of Day"))
+  }
+}
+
+for (i in c(1,4,7,10)){
+  for (j in c(5,10,25)){
+    dtdate <- dt2009 %>% filter(month == i, day == j, hour>9 & hour<15)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    #"First half: Year 2009", y = "Sub_metering_2", x = "Time of Day"))
+    dtdate <- dt2009 %>% filter(month == i, day == j, hour>15 & hour<22)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + geom_point() 
+    #+ labs(title = month.name[i], subtitle = j, caption = 
+    #+"Second half: Year 2009", y = "Sub_metering_2", x = "Time of Day"))
+  }
+}
+
+for (i in c(1,4,7,10)){
+  for (j in c(5,10,25)){
+    dtdate <- dt2010 %>% filter(month == i, day == j, hour>9 & hour<15)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    #"First half: Year 2010", y = "Sub_metering_2", x = "Time of Day"))
+    dtdate <- dt2010 %>% filter(month == i, day == j, hour>15 & hour<22)
+    #print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+    #geom_point() + labs(title = month.name[i], subtitle = j, caption = 
+    # "Second half: Year 2010", y = "Sub_metering_2", x = "Time of Day"))
+  }
+}
+```
+
+```{r}
+dtdate <- dt2008 %>% filter(month == 1, day == 5, hour>15 & hour<21)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + geom_point() + 
+        labs(title = "January 5", caption = "Second half: Year 2008",
+              y = "Sub_metering_2", x = "Time of Day"))
+```
+1)	January 5, 2008- 3pm to 9pm (Washing m/c and dryer OFF)
+
+```{r}
+dtdate <- dt2007 %>% filter(month == 1, day == 10, hour>9 & hour<15)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + geom_point() + 
+        labs(title = "January 10", caption = "First half: Year 2007", 
+             y = "Sub_metering_2", x = "Time of Day"))
+```
+2)	January 10, 2007- 9am to 3pm (Washing m/c and dryer ON)
+
+When washing machine is switched on, it uses about 40Wh of maximum per-minute-energy and when dryer is switched on, it uses 75Wh of maximum per-minute-energy. In every wash cycle, the washing machine and dryer are used for approximately 2 hours in total.
+
+```{r}
+dtdate <- dt2008 %>% filter(month == 1, day == 25, hour>9 & hour<15)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + geom_point() + 
+        labs(title = "January 25", caption = "First half: Year 2008", 
+             y = "Sub_metering_2", x = "Time of Day"))
+```
+3)	January 25, 2008- 9am-3pm: Washing machine ON
+
+It shows a typical day when washing machine and dryer is used. The most common time of use is 1pm-3pm and 4pm-7pm. This graph shows the former time of use.
+
+```{r}
+dtdate <- dt2007 %>% filter(month == 4, day == 25, hour>9 & hour<15)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+        geom_point() + labs(title = "April 25", caption = "First half: 
+                            Year 2007", y = "Sub_metering_2", x = "Time of Day"))
+```
+4)	April 25, 2007: 9am-3pm: Washing machine used in morning hours
+
+This is an example of laundry being done at odd hours i.e., in the morning. There are very few days in a month when laundry is done either in the morning or during night (i.e., after 9pm)
+
+```{r}
+dtdate <- dt2009 %>% filter(month == 4, day == 10, hour>15 & hour<21)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+        geom_point() + labs(title = "April 10", caption = "Second half: Year 2009"
+                            , y = "Sub_metering_2", x = "Time of Day"))
+```
+5)	April 10, 2009: 3pm-9pm: Use of dryer in the evening hours
+
+```{r}
+dtdate <- dt2007 %>% filter(month == 7, day == 5, hour>15 & hour<21)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + geom_point() +
+        labs(title = "July 5", caption = "Second half: Year 2007", 
+             y = "Sub_metering_2", x = "Time of Day"))
+```
+6)	July 5, 2007: 3pm-9pm: No washing machine or dryer used
+
+July 5, 2007 is one of the days when laundry wasn’t done. Irrespective of the season, every month has 12-14 days when the only load used in the laundry room is the refrigerator.
+
+```{r}
+dtdate <- dt2009 %>% filter(month == 7, day == 5, hour>9 & hour<15)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + 
+        geom_point() + labs(title = "July 5", caption = "First half: Year 2009", 
+                            y = "Sub_metering_2", x = "Time of Day"))
+```
+7)	July 5, 2009: 9am-3pm: Discrepancy in meter reading
+
+There are certain days when there is a discrepancy in the meter reading. There is a spike of about 37Wh for a very few minutes. This seems to be an error as the machine, or the dryer would not be used for such a short time.
+
+```{r}
+dtdate <- dt2010 %>% filter(month == 10, day == 10, hour>9 & hour<15)
+print(ggplot(aes(x = Time, y = Sub_metering_2), data= dtdate) + geom_point() + 
+        labs(title = "October 10", caption = "First half: Year 2010", 
+             y = "Sub_metering_2", x = "Time of Day"))
+```
+8)	October 10, 2010: 9am-3pm: Zero-meter reading throughout the period
+
+There are some days when the sub-metering 2 reading is zero. This can mean two things. First, all the appliances are switched off on these days. Second possibility is that since the meter reading takes values in multiples of 1 Wh. If the usage is under 1Wh the meter reading will show 0 Wh. As people don’t generally switch off their refrigerators, the second possibility is more likely.
+
+### Sub Metering 3
+
+```{r }
+# y <- c(1:12)
+# b <- c(0:24)
+# for (x in y){
+#   for (a in b){
+# dt1_2007 <- dt %>% filter(year == 2008, month == x, day == 9, hour == a)
+# print(ggplot(dt1_2007, aes(x = minute,y = Sub_metering_3)) +
+#   geom_line() + labs(title = month.name[x] , subtitle = a))
+#   }}
+
+b <- c(5,6,13,15,18)
+  for (a in b){
+dt1_2007 <- dt %>% filter(year == 2008, month == 5, day == 9, hour == a)
+print(ggplot(dt1_2007, aes(x = minute,y = Sub_metering_3)) +
+  geom_line() + labs(title = month.name[x] , subtitle = a))
+  }
+
+```
+Here we plot the hourly pattern for submetering 3 for all months and years. We can see a few peculiar patterns which are repeated based on the commented code but it is hard to conclude on what equipment is used when without having the equipment data on consumption. The observed patterns for 9, May 2008 is plotted.
+
+# Linear Modeling
+
+## Checking the Data and Global Active Power Predictions
+We visualized and checked the Temperature & Global Active power variables to determine whether they have reasonable values or need modification for linear regression modeling. If they needed modification, made the adjustments to fix the issues. Through visualization, we could gauge an overall behavior of these variables. 
+
+After making the required adjustments, we fit a linear regression using lm() function to model Global Active power as a function of temperature.
+
+```{r Linear Regression - Submetering 3, Global Active power hw6}
+(Hourlydata_2007_2008_2009 <- read_csv("Hourlydata_2007_2008_2009.csv"))
+
+Hourlydata_2007_2008_2009 <- drop_na(Hourlydata_2007_2008_2009)
+Hourlydata_2007_2008_2009$Global_active_power <- as.numeric(as.character
+                                (Hourlydata_2007_2008_2009$Global_active_power))
+
+ggplot(data = Hourlydata_2007_2008_2009, aes(Global_active_power)) + 
+  geom_histogram()
+ggplot(data = Hourlydata_2007_2008_2009, aes(x = TIME, y = TEMPERATURE)) + 
+  geom_point()
+ggplot(data = Hourlydata_2007_2008_2009, aes(x = Global_active_power, 
+                                             y = TEMPERATURE)) + 
+  geom_point()
+
+# Linear regression
+(lm2 <- lm(Global_active_power ~ TEMPERATURE, data = Hourlydata_2007_2008_2009))
+
+# Add predictions over new points
+(newdata1 <- Hourlydata_2007_2008_2009 %>% 
+  select(TEMPERATURE) %>%
+  data_grid(TEMPERATURE))
+(newdata2 <- newdata1 %>% add_predictions(lm2))
+
+# Plot predictions and smooth curve
+ggplot(data = Hourlydata_2007_2008_2009) + 
+  geom_point(aes(x = TEMPERATURE, y = Global_active_power)) + 
+  geom_smooth(aes(x = TEMPERATURE, y = Global_active_power)) + 
+  geom_line(data = newdata2, aes(x = TEMPERATURE, y = pred), col = "red")
+```
+
+We plotted the model’s predictions on a scatter plot of Global Active power versus temperature and compared the predictions with geom_smooth curve to observe if the linear relationship seems appropriate.
+
+There is not much difference between the linear regression result and the geom_smooth result. The model is strongly affected at '0' value of temperature, since less data sets are available around the '0' temperature. The similar effect can be seen at higher temperature values, due to less data sets. The model is estimating the Global Active power pretty close to the geom_smooth for temperature values between 30 to 75. Overall, the linear model is good fit here.
+
+## Examining the Residuals
+Next, we examined the residuals from our regression. Before plotting the scatter plots of residuals, we also plotted histograms of the residuals to examine if they are normally distributed above and below zero.
+
+Residuals don't seem to have large deviations from zero. It looks like they are not evenly distributed above and below the zero. However by looking at the histogram, it can be observed that the residuals are densely populated below the zero and more scattered above the zero. Overall, most of the residuals are near to zero, which suggest that there is less scope to improve this model by including some non-linear transformation of temperature variable.
+
+```{r Linear Regression - Examining residuals hw6}
+#Active power residuals
+# Add residuals to data frame
+(wd2007_residuals1 <- Hourlydata_2007_2008_2009 %>% add_residuals(lm2))
+
+# Make histogram
+ggplot(data = wd2007_residuals1) + 
+  geom_histogram(aes(x = resid), bins = 100)
+
+# Plot residuals versus num.complaints
+ggplot(data = wd2007_residuals1, aes(x = TEMPERATURE, y = resid)) +
+  geom_point() + 
+  geom_smooth()
+```
+
+## Evaluating with Factor variable
+Now, we are predicting the Active Global power with Wind Direction Type factor variable. In the below code, we have fitted the linear regression and plotted the model predictions for the factor variable.
+
+The wind direction type factor variable, has 18 levels, so there will be 18 predictions. The predictions for the omitted level (CALM) is just the intercept, and the predictions for other levels are combinations of the intercept with one of the other coefficients for the dummy variables. In this case the intercept is 1.19, so the prediction for CALM would be 1.19.
+
+```{r Linear Regression - Factor variable hw6}
+# Find unique values
+unique(Hourlydata_2007_2008_2009$WIND)
+
+# Turn factor variables into appropriate type
+Hourlydata_2007_2008_2009$WIND1 <- factor(Hourlydata_2007_2008_2009$WIND)
+table(Hourlydata_2007_2008_2009$WIND)
+
+# Type of Wind direction
+model_matrix(Hourlydata_2007_2008_2009, ~ WIND1)
+
+#Active Power
+# Fit model with factor
+lm4 <- lm(Global_active_power ~ WIND1, data = Hourlydata_2007_2008_2009)
+summary(lm4)
+
+# Make predictions
+(newdata4 <- Hourlydata_2007_2008_2009 %>%
+  data_grid(WIND1) %>%
+  add_predictions(lm4))
+
+# Plot predictions
+ggplot(data = Hourlydata_2007_2008_2009, aes(x = WIND1, y = Global_active_power)) + 
+  geom_point() + 
+  geom_point(data = newdata4, aes(x = WIND1, y = pred), 
+             col = "red", size = 4)
+```
+
+## Linear Regression - Factor variable
+
+```{r Linear Regression - Factor variable }
+
+lm6 <- lm(Global_active_power ~ TEMPERATURE + 
+            HUMIDITY + PRESSURE + CONDITION, data = Hourlydata_2007_2008_2009)
+summary(lm6)
+
+```
+We use the weather data which includes temperature, humidity, wind direction, pressure and weather condition as independent variables for the model and the global active power is the dependent variable. It is expected that the power consumption has a  close relationship with the temperature as majority of the load is composed of cooling loads which is reflected in submetering 3 data. We were also interested to find if other weather variables contribute to this relationship. Looking at the wind direction data from earlier it felt that it wind direction has very less effect on the power consumption and we decided to exclude that variable.
+The equation is ${Global_Active_Power} = 2.31 - 0.01*\text{Temperature} - 0.004*\text{Humidity} - 0.001*\text{Pressure} - 0.189*\text{Condition}$.
+
+## Checking Normal distribution
+
+```{r, warning = FALSE, message = FALSE}
+
+hist(Hourlydata_2007_2008_2009$TEMPERATURE, breaks = "FD")
+
+hist(Hourlydata_2007_2008_2009$DEWPOT, breaks = "FD")
+
+hist(Hourlydata_2007_2008_2009$HUMIDITY, breaks = "FD")
+
+hist(Hourlydata_2007_2008_2009$WIND_SPEED, breaks = "FD")
+
+hist(Hourlydata_2007_2008_2009$PRESSURE, breaks = "FD")
+
+```
+All the parameters has a roughly normal distribution, plus a component that is skewed towards one side. 
+
+## Check for Unbalance in Discrete variables
+
+```{r, warning = FALSE, message = FALSE}
+table(Hourlydata_2007_2008_2009$WIND, useNA = "always")
+table(Hourlydata_2007_2008_2009$CONDITION, useNA = "always")
+#Unbalanced WIND direction categorical variables. This variable to be dropped.
+```
+We have two discrete variables, wind and condition. Counting the numbers for each variables we found out that wind has an unbalanced distribution, so we decided to drop wind direction as one of our independent variables. Conversely,  the conditions variables is more evenly distributed and therefore would act as a better predictor for our model. 
+
+Looking at Gauss-Markov assumptions, for linearity since the data is collected over the same period we can assume that the data is linear. However this not something we can know for sure. 
+We have picked 2 months July and December and just the half hourly data which our model is based on. It is nearly not possible to have same data for different points and hence the assumption of random sampling is valid.
+Looking at the zero conditional mean of errors, these are related to the average power and many of the regressors. Even though there might be correlation between the average global power and variables like temperature and condition, but not necessarily for pressure and wind speed.
+
+## Fitting the Residuals
+
+```{r, warning = FALSE, message = FALSE}
+
+ dat2 <- data.frame(fits = fitted(lm2), resids = rstudent(lm2))
+
+ ggplot(dat2, aes(x = fits, y = resids)) + 
+  geom_point() + 
+  geom_smooth()
+ 
+dat4 <- data.frame(fits = fitted(lm6), resids = rstudent(lm6))
+
+ ggplot(dat4, aes(x = fits, y = resids)) + 
+  geom_point() + 
+  geom_smooth()
+
+```
+
+We can use the Box-Cox transformation to check whether there is an improvement. Because there are only a few zeros in the data.
+
+## Box Cox analysis
+
+```{r, warning = FALSE, message = FALSE}
+library(car)
+table(Hourlydata_2007_2008_2009$Global_active_power == 0)
+
+Hourlydata_2007_2008_2009$Global_active_power.adj <- 
+  Hourlydata_2007_2008_2009$Global_active_power
+Hourlydata_2007_2008_2009$Global_active_power.adj[
+  Hourlydata_2007_2008_2009$Global_active_power == 0] <- 
+  Hourlydata_2007_2008_2009$Global_active_power[
+    Hourlydata_2007_2008_2009$Global_active_power == 0] + .001
+lm7 <- lm(Global_active_power.adj ~ TEMPERATURE + 
+            HUMIDITY + WIND + PRESSURE + CONDITION, 
+          data = Hourlydata_2007_2008_2009)
+summary(lm7)
+boxCox(lm7, family = "yjPower")
+
+Hourlydata_2007_2008_2009$Global_active_power.inv <- 
+  1/(Hourlydata_2007_2008_2009$Global_active_power.adj)
+
+lm8 <- lm(Global_active_power.inv ~ TEMPERATURE + 
+            HUMIDITY + WIND + PRESSURE + CONDITION, 
+          data = Hourlydata_2007_2008_2009)
+summary(lm8)
+
+dat2 <- data.frame(fits = fitted(lm8), resids = rstudent(lm8))
+ ggplot(dat2, aes(x = fits, y = resids)) + 
+  geom_point() + 
+  geom_smooth()
+
+ 
+lm9 <- lm(log(Global_active_power.adj) ~ TEMPERATURE + 
+            HUMIDITY + WIND + PRESSURE + CONDITION, 
+          data = Hourlydata_2007_2008_2009)
+summary(lm9)
+
+dat3 <- data.frame(fits = fitted(lm9), resids = rstudent(lm9))
+ ggplot(dat3, aes(x = fits, y = resids)) + 
+  geom_point() + 
+  geom_smooth()
+#Transformation doesn't lead to better fit for residuals.
+```
+
+It doesn't seem that the transformation normalises the data more and hence it is not clear on which is the best transormation on this data.
+
+## GAM Model analysis
+
+```{r, warning = FALSE, message = FALSE}
+library(mgcv)
+
+gam1 <- gam(Global_active_power ~ s(TEMPERATURE) + 
+            s(HUMIDITY) + s(PRESSURE) + CONDITION, 
+          data = Hourlydata_2007_2008_2009)
+summary(gam1)
+plot(gam1, resid = TRUE)
+
+```
+Looking at the graph of the gam model, temperature and humidity has enough unique values for the spline function in our original data. We attempted to use pressure, but the data is too compact and there is not enough unique values for the spine function to work properly.
+
+## Cross Validation analysis
+
+```{r, warning = FALSE, message = FALSE}
+
+# Create folds
+folds <- 1:5
+ids <- rep(folds, length.out = nrow(Hourlydata_2007_2008_2009))
+ids <- sample(ids, replace = FALSE)
+
+resid.lm <- c()
+resid.gam <- c()
+
+for(k in folds){
+  train <- Hourlydata_2007_2008_2009[ids != k, ]
+  val <- Hourlydata_2007_2008_2009[ids == k, ]
+  train.lm <- gam(Global_active_power ~ TEMPERATURE + 
+            HUMIDITY + WIND + PRESSURE + CONDITION, 
+          data = Hourlydata_2007_2008_2009)
+  train.gam <- gam(Global_active_power ~ s(TEMPERATURE) + 
+            s(HUMIDITY) + s(PRESSURE) + CONDITION, 
+          data = Hourlydata_2007_2008_2009) 
+  pred.lm <- predict(train.lm, newdata = val)
+  pred.gam <- predict(train.gam, newdata = val)
+  resid.lm <- c(resid.lm, pred.lm - val$Global_active_power)
+  resid.gam <- c(resid.gam, pred.gam - val$Global_active_power)
+}
+(mse.lm <- mean(resid.lm^2))
+(mse.gam <- mean(resid.gam^2))
+
+```
+
+Using cross validation with 5 folds, to calculate the mean squeare error. We found out that the gam model performs slightly better than regular regression model.
+
+## Ridge model analysis
+
+```{r, warning = FALSE, message = FALSE}
+
+# Get regressor matrix
+X <- Hourlydata_2007_2008_2009 %>%
+  select(-DATE, -Global_active_power, -TIME, -Sub_metering_2,-Sub_metering_1,
+         -Global_intensity,-Voltage,-Global_reactive_power,-WIND_GUST,
+         -WIND,-WIND1)
+X <- model.matrix( ~ ., data = X)[, -1]
+y <- Hourlydata_2007_2008_2009 %>%
+  select(Global_active_power)
+y <- unlist(y)
+
+
+# Ridge regression
+ridge <- cv.glmnet(x = X, y = y, alpha = 0)
+plot(ridge, main = "Ridge penalty\n\n")
+min(ridge$cvm)       # minimum MSE
+(min.lambda <- ridge$lambda.min)     # lambda for this min MSE
+ridge$cvm[ridge$lambda == ridge$lambda.1se]  # 1-SE rule
+ridge$lambda.1se  # lambda for this MSE
+
+# Use minimum value
+ridge.min <- glmnet(x = X, y = y, alpha = 0, lambda = min.lambda)
+ridge.coef <- coef(ridge.min)
+(lm1 <- lm(y ~ X))
+OLS.coef <- coef(lm1)
+data.frame(ridge.coef = as.vector(ridge.coef), OLS.coef = OLS.coef)
+
+# Plot predictions
+plot(predict(ridge.min, newx = X), y, 
+     xlim = c(-3, 3), ylim = c(-3, 3))
+abline(0, 1)
+
+```
+After using ordinary least square linear regression, we move on to using additional models taught in class to see if we can obtain a better result. The first model we used is a ridge regression model. The optimal lambda we got is 0.1, which is close to zero. Therefore, the model does not give penalty to the variables. This will tend to low bias for our model, but doesn't reduce the variance much. The MSE value for lasso is 0.015 which is very close to zero.
+
+## Lasso model analysis
+
+```{r, warning = FALSE, message = FALSE}
+
+# Lasso 
+lasso <- cv.glmnet(x = X, y = y, alpha = 1)
+plot(lasso, main = "Lasso penalty\n\n")
+min(lasso$cvm)       # minimum MSE
+(min.lambda <- lasso$lambda.min)     # lambda for this min MSE
+lasso$cvm[lasso$lambda == lasso$lambda.1se]  # 1-SE rule
+(se.lambda <- lasso$lambda.1se)  # lambda for this MSE
+
+# Use minimum value
+lasso.min <- glmnet(x = X, y = y, alpha = 1, lambda = min.lambda)
+lasso.se <- glmnet(x = X, y = y, alpha = 1, lambda = se.lambda)
+(lasso.coef <- coef(lasso.min))
+(OLS.coef <- coef(lm1))
+coef(lasso.se)
+
+# Plot predictions
+plot(predict(lasso.min, newx = X), y, 
+     xlim = c(-3, 3), ylim = c(-3, 3))
+abline(0, 1)
+
+```
+Using the Lasso regression model, our plot shows that the optimal lambda for least mean square error is 0.03 and is even closer to zero than ridge. The MSE value for lasso is 0.00095 which is very close to zero.
+
+## Elastic Net model analysis
+```{r, warning = FALSE, message = FALSE}
+
+# Elastic Net
+e.net <- cv.glmnet(x = X, y = y, alpha = 0.5)
+plot(e.net, main = "Lambda penalty\n\n")
+min(e.net$cvm)       # minimum MSE
+(min.lambda <- e.net$lambda.min)     # lambda for this min MSE
+e.net$cvm[e.net$lambda == e.net$lambda.1se]  # 1-SE rule
+(se.lambda <- e.net$lambda.1se)  # lambda for this MSE
+
+# Use minimum value
+e.net.min <- glmnet(x = X, y = y, alpha = 0.5, lambda = min.lambda)
+e.net.se <- glmnet(x = X, y = y, alpha = 0.5, lambda = se.lambda)
+(e.net.coef <- coef(e.net.min))
+(OLS.coef <- coef(lm1))
+coef(e.net.se)
+
+# Plot predictions
+plot(predict(e.net.min, newx = X), y, 
+     xlim = c(-3, 3), ylim = c(-3, 3))
+abline(0, 1)
+
+```
+The lambda value for elastic net is very close to zero. The value we obtained for minimum MSE lambda is 0.03 which is very close to the lasso model. The MSE value for this model is 0.00108.
+
+## Random Forest model analysis
+
+```{r, warning = FALSE, message = FALSE}
+
+# Random forest
+(rf1 <- randomForest(x = X, y = y, 
+                     ntree = 500, mtry = floor(sqrt(ncol(X))),
+                     nodesize = 5,
+                     maxnodes = NULL))
+mean(rf1$mse)
+mean(rf1$rsq)
+# Plot predictions
+plot(predict(rf1, newx = X), y, 
+     xlim = c(-3, 3), ylim = c(-3, 3))
+abline(0, 1)
+
+```
+For a default model with ntree as 500 and mtry as floor(sqrt(ncol(X))) which is 3 in this case, the MSE value for random forest is 0.0018 which is slightly higher than lasso but better than the ridge model. 
+
+## Hyper parameter selection using default Package caret
+
+```{r, warning = FALSE, message = FALSE, eval = FALSE}
+library(caret)
+## Elastic net hyperparameter selection using the caret package
+# grid search across lambda and alpha
+cv_glmnet <- train(x = X, y = y, 
+                   method = "glmnet",
+                   preProc = c("zv", "center", "scale"),
+                   trControl = trainControl(method = "cv", 
+                                            number = 10,
+                                            repeats = 1),
+                   tuneLength = 10)
+
+# model with lowest RMSE
+(cv_glmnet$bestTune)
+
+# results for model with lowest RMSE
+cv_glmnet$results %>%
+  filter(alpha == cv_glmnet$bestTune$alpha, 
+         lambda == cv_glmnet$bestTune$lambda)
+
+# plot cross-validated RMSE
+ggplot(cv_glmnet)
+
+## Random forest hyperparameter optimization
+MSE <- matrix(NA, nrow = 3, ncol = 3)
+ntrees <- c(300, 400, 500)
+mtry <- c(3, 4, 5)
+for(i in 1:3){
+  for(j in 1:3){
+   cat("# of trees: ", ntrees[i], "\n")
+   cat("# columns: ", mtry[j], "\n")
+   rf1 <- randomForest(x = X, y = y, 
+                       ntree = ntrees[i], mtry = mtry[j])
+   MSE[i, j] <- mean((predict(rf1) - y)^2)
+   cat("MSE: ", MSE[i, j], "\n\n")
+   }
+}
+
+# Explore more columns
+MSE <- c()
+mtry <- 4:10
+for(i in 1:length(mtry)){
+   cat("# columns: ", mtry[i], "\n")
+   cat("MSE: ", MSE[i], "\n\n")
+   rf1 <- randomForest(x = X, y = y, 
+                       ntree = 300, mtry = mtry[i])
+   MSE[i] <- mean((predict(rf1) - y)^2)
+}
+
+```
+With hyper parameter selection, for elastic net the value of alpha is 0.6 and the lambda value we get as 0.074. The MSE for this model would be 0.0051 which seems to be slightly higher than the default model. Hence it would be a better idea to use the default model.
+For the random forest model with hyper paramter selection, we get the number of trees as 400 and number of columns as 5 for the least MSE. The MSE for this model is observed as 0.0002 which seems much better than any of the models so far.
+
+## Hyper parameter selection using cross validation
+
+```{r, warning = FALSE, message = FALSE, eval = FALSE}
+# Train Case Comparison
+folds <- 1:5
+id.folds <- rep(folds, length.out = length(y))
+id.folds <- sample(id.folds)
+
+# Get training and test data
+train.X <- X[id.folds != 1, ]
+train.y <- y[id.folds != 1]
+test.X <- X[id.folds == 1, ]
+test.y <- y[id.folds == 1]
+
+# Regularized models
+cat("Hyperparameter tuning for regularized models...\n")
+cv.ridge <- cv.glmnet(x = train.X, y = train.y, alpha = 0)
+(ridge.lambda <- cv.ridge$lambda.min)
+cv.lasso <- cv.glmnet(x = train.X, y = train.y, alpha = 1)
+(lasso.lambda <- cv.lasso$lambda.min)
+cv.enet <- train(x = train.X, y = train.y, 
+                   method = "glmnet",
+                   preProc = c("zv", "center", "scale"),
+                   trControl = trainControl(method = "cv", 
+                                            number = 10,
+                                            repeats = 1),
+                   tuneLength = 10)
+enet.alpha <- cv.enet$bestTune$alpha
+enet.lambda <- cv.enet$bestTune$lambda
+# Random forest 
+cat("Hyperparameter tuning for random forest...\n")
+MSE <- c()
+mtry <- 4:8
+for(i in 1:length(mtry)){
+  cat("# columns: ", mtry[i], "\n")
+  rf1 <- randomForest(x = train.X, y = train.y, 
+                       ntree = 300, mtry = mtry[i])
+  MSE[i] <- mean((predict(rf1) - train.y)^2)
+  cat("MSE: ", MSE[i], "\n\n")
+}
+
+best.rf <- which(MSE == min(MSE))[1] # find the index with the lowest MSE
+mtry.best <- mtry[best.rf] # find the number of columns with lowest MSE
+
+# Fit best models  
+cat("Fit best models...\n")
+best.ridge <- glmnet(x = train.X, y = train.y,
+                     alpha = 0, lambda = ridge.lambda)
+best.lasso <- glmnet(x = train.X, y = train.y,
+                     alpha = 1, lambda = lasso.lambda)
+best.enet <- glmnet(x = train.X, y = train.y,
+                      alpha = enet.alpha, lambda = enet.lambda)
+best.rf <- randomForest(x = train.X, y = train.y,
+                        ntree = 300, mtry = mtry.best)
+# Calculate test error
+cat("Calculate test MSE...\n")
+(mse.ridge <- mean((predict(best.ridge, newx = test.X) - test.y)^2))
+(mse.lasso <- mean((predict(best.lasso, newx = test.X) - test.y)^2))
+(mse.enet <- mean((predict(best.enet, newx = test.X) - test.y)^2))
+(mse.rf <- mean((predict(best.rf, newdata = test.X) - test.y)^2))
+
+```
+As per the hyper parameter selection done using cross validation we can observe that the random forest model tends to give the best MSE at 0.00016.
+
+## Test set Comparison 
+To determine the best model for our data, we performed a MSE calculation using the cross validation and the optimized hyper parameters for each model choice. Comparing the MSE we concluded that random forest is the best model for our task. In this scenario, using a random forest regression model, we can more effectively pick up on interactions or non linearities that other models can't. 
+
+```{r, warning = FALSE, message = FALSE, eval = FALSE}
+# Test Case Comparison
+folds <- 1:5
+id.folds <- rep(folds, length.out = length(y))
+id.folds <- sample(id.folds)
+sse.ridge <- c()
+sse.lasso <- c()
+sse.enet <- c()
+sse.rf <- c()
+
+for(k in 1:5){
+  # Get training and validation data
+  train.X <- X[id.folds != k, ]
+  train.y <- y[id.folds != k]
+  val.X <- X[id.folds == k, ]
+  val.y <- y[id.folds == k]
+  # Regularized models
+  cat("Hyperparameter tuning for regularized models...\n")
+  cv.ridge <- cv.glmnet(x = train.X, y = train.y, alpha = 0)
+  (ridge.lambda <- cv.ridge$lambda.min)
+  cv.lasso <- cv.glmnet(x = train.X, y = train.y, alpha = 1)
+  (lasso.lambda <- cv.lasso$lambda.min)
+  cv.enet <- train(x = train.X, y = train.y, 
+                   method = "glmnet",
+                   preProc = c("zv", "center", "scale"),
+                   trControl = trainControl(method = "cv", 
+                                            number = 10,
+                                            repeats = 1),
+                   tuneLength = 10)
+  enet.alpha <- cv.enet$bestTune$alpha
+  enet.lambda <- cv.enet$bestTune$lambda
+  # Random forest 
+  cat("Hyperparameter tuning for random forest...\n")
+  MSE <- c()
+  mtry <- 4:8
+  for(i in 1:length(mtry)){
+   cat("# columns: ", mtry[i], "\n")
+   rf1 <- randomForest(x = train.X, y = train.y, 
+                       ntree = 300, mtry = mtry[i])
+   MSE[i] <- mean((predict(rf1) - train.y)^2)
+  cat("MSE: ", MSE[i], "\n\n")
+  }
+  best.rf <- which(MSE == min(MSE))[1] # find the index with the lowest MSE
+  mtry.best <- mtry[best.rf] # find the number of columns with lowest MSE
+
+  # Fit best models  
+  cat("Fit best models...\n")
+  best.ridge <- glmnet(x = train.X, y = train.y, 
+                       alpha = 0, lambda = ridge.lambda)
+  best.lasso <- glmnet(x = train.X, y = train.y, 
+                       alpha = 1, lambda = lasso.lambda)
+  best.enet <- glmnet(x = train.X, y = train.y, 
+                       alpha = enet.alpha, lambda = enet.lambda)
+  best.rf <- randomForest(x = train.X, y = train.y,
+                          ntree = 300, mtry = mtry.best)
+  # Calculate cross-validated error
+  cat("Calculate cross-validated MSE...\n")
+  sse.ridge <- c(sse.ridge, (predict(best.ridge, newx = val.X) - val.y)^2)
+  sse.lasso <- c(sse.lasso, (predict(best.lasso, newx = val.X) - val.y)^2)
+  sse.enet <- c(sse.enet, (predict(best.enet, newx = val.X) - val.y)^2)
+  sse.rf <- c(sse.rf, (predict(best.rf, newdata = val.X) - val.y)^2)
+}
+
+mean(sse.ridge)
+mean(sse.lasso)
+mean(sse.enet)
+mean(sse.rf)
+
+```
+# Analysis on using Time of Use Tariffs
+
+```{r analysis on TOU rates }
+y <- c(2007:2010)
+for (x in y){
+  dt1_year <- dt %>% filter(year == x)
+cat("Year", x,"with TOU rates", sum(dt1_year$bill1,na.rm = TRUE), "€\n")
+cat("Year", x,"with fixed rates", sum(dt1_year$bill2,na.rm = TRUE), "€\n")
+}
+```
+As per the analysis we find that switching to TOU rates would be beneficial to the consumer.
+
+# Drawbacks and Limitations
+Existing time series model predictions are able to use only timestamps and consumption patterns to forecast future usage. We also had the drawback that equipment load data was unavailable in the original data set which made it difficult to analyze which equipment was used when. We did not have the time to compare our regression models to these time series models. The drawback of our model is if weather data is lacking, our model would not be able to perform.
+
+# Conclusion
+Here we have conducted an exploratory data analysis and compared different models for the residential consumption data and concluded that a random forest model with hyperparameter selection using cross validation seems like the best model with the least mean squared error. We can also conclude that based on the consumption pattern using a Time of use rate would be more beneficial to the customer.
+
+# Future Directions
+We will follow the consumption pattern and predict their future consumption, which would allow us to suggest ways to conserve energy for each submetering type. This process would include identifying the device that is consuming the most energy at a particular time and if we could take measures to reduce the consumption of this device or replace this with another more energy-efficient appliance. We would also suggest the best time to use this device to conserve energy efficiently.
+
+# Reference
+[1] https://archive.ics.uci.edu/ml/datasets/Individual+household+electric+power+consumption
+
+[2] https://www.wunderground.com/history/daily/fr/paris/LFPO/date/2007-9-30
+
+[3] Cédric Clastres, Olivier Rebenaque, Patrick Jochem. Provision of Demand Response from the prosumers in multiple markets. 2020. ffhal-03167446ff
+
