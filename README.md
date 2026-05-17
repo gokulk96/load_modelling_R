@@ -1,5 +1,5 @@
 # load_modelling_R
-Our project revolves around a household in France (city’s name), where we have obtained
+Our project revolves around a household in France, where we have obtained
 their energy consumption data over the years. To be precise, we have the energy consumption data by the
 minute for this particular household. In addition to this, we have also obtained the power consumption
 data that we will be utilized in this project. The data we obtained for the household is divided into three
